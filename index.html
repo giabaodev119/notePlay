@@ -3,13 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Memory Grid</title>
+
+    <title>Phần mềm luyện trí nhớ</title>
 
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         font-family: Arial, sans-serif;
+        background: #f5f5f5;
         padding: 20px;
         text-align: center;
+      }
+
+      h1 {
+        margin-bottom: 20px;
       }
 
       .controls {
@@ -17,13 +27,15 @@
       }
 
       input {
-        width: 70px;
-        padding: 5px;
+        width: 80px;
+        padding: 8px;
+        margin: 0 5px;
       }
 
       button {
         padding: 8px 15px;
         cursor: pointer;
+        margin: 5px;
       }
 
       #symbols {
@@ -32,52 +44,58 @@
 
       .symbol {
         font-size: 30px;
-        cursor: pointer;
         margin: 5px;
+        cursor: pointer;
         padding: 5px;
         border: 2px solid transparent;
+        border-radius: 8px;
+        display: inline-block;
       }
 
       .symbol.selected {
-        border: 2px solid blue;
-        border-radius: 5px;
+        border-color: #2196f3;
+        background: white;
       }
 
       #grid {
         display: grid;
         gap: 5px;
         justify-content: center;
+        margin-top: 20px;
       }
 
       .cell {
         width: 60px;
         height: 60px;
+        background: white;
         border: 1px solid #ccc;
         display: flex;
-        justify-content: center;
         align-items: center;
+        justify-content: center;
         font-size: 30px;
         cursor: pointer;
-        background: white;
+        user-select: none;
+        border-radius: 8px;
       }
 
       .cell:hover {
-        background: #f0f0f0;
+        background: #eeeeee;
       }
     </style>
   </head>
   <body>
-    <h2>Memory Grid</h2>
+    <h1>🧠 Phần mềm luyện trí nhớ</h1>
 
     <div class="controls">
       Hàng:
-      <input type="number" id="rows" value="4" min="1" />
+      <input type="number" id="rows" value="5" min="1" />
 
       Cột:
-      <input type="number" id="cols" value="4" min="1" />
+      <input type="number" id="cols" value="5" min="1" />
 
       <button onclick="createGrid()">Tạo bảng</button>
-      <button onclick="clearGrid()">Clear</button>
+
+      <button onclick="clearAll()">Clear</button>
     </div>
 
     <div id="symbols"></div>
@@ -91,53 +109,120 @@
 
       const symbolsContainer = document.getElementById("symbols");
 
-      symbols.forEach((symbol) => {
+      symbols.forEach((symbol, index) => {
         const btn = document.createElement("span");
+
         btn.className = "symbol";
         btn.textContent = symbol;
+
+        if (index === 0) {
+          btn.classList.add("selected");
+        }
 
         btn.onclick = () => {
           document
             .querySelectorAll(".symbol")
-            .forEach((x) => x.classList.remove("selected"));
+            .forEach((item) => item.classList.remove("selected"));
 
           btn.classList.add("selected");
+
           selectedSymbol = symbol;
         };
 
         symbolsContainer.appendChild(btn);
       });
 
-      symbolsContainer.firstChild.classList.add("selected");
-
       function createGrid() {
         const rows = parseInt(document.getElementById("rows").value);
+
         const cols = parseInt(document.getElementById("cols").value);
 
         const grid = document.getElementById("grid");
 
         grid.innerHTML = "";
-        grid.style.gridTemplateColumns = `repeat(${cols}, 60px)`;
+
+        grid.style.gridTemplateColumns = `repeat(${cols},60px)`;
+
+        const savedData = JSON.parse(localStorage.getItem("memoryGrid"));
+
+        let cellsData = [];
+
+        if (savedData && savedData.rows == rows && savedData.cols == cols) {
+          cellsData = savedData.cells;
+        }
 
         for (let i = 0; i < rows * cols; i++) {
           const cell = document.createElement("div");
+
           cell.className = "cell";
 
+          cell.textContent = cellsData[i] || "";
+
           cell.onclick = () => {
-            cell.textContent = selectedSymbol;
+            if (selectedSymbol) {
+              cell.textContent = selectedSymbol;
+            }
+
+            saveGrid();
           };
 
           grid.appendChild(cell);
         }
+
+        saveGrid();
       }
 
-      function clearGrid() {
+      function saveGrid() {
+        const rows = document.getElementById("rows").value;
+
+        const cols = document.getElementById("cols").value;
+
+        const cells = [];
+
         document.querySelectorAll(".cell").forEach((cell) => {
-          cell.textContent = "";
+          cells.push(cell.textContent);
         });
+
+        const data = {
+          rows,
+          cols,
+          cells,
+        };
+
+        localStorage.setItem("memoryGrid", JSON.stringify(data));
       }
 
-      createGrid();
+      function loadGrid() {
+        const savedData = JSON.parse(localStorage.getItem("memoryGrid"));
+
+        if (!savedData) {
+          createGrid();
+          return;
+        }
+
+        document.getElementById("rows").value = savedData.rows;
+
+        document.getElementById("cols").value = savedData.cols;
+
+        createGrid();
+      }
+
+      function clearAll() {
+        if (!confirm("Bạn có muốn xóa toàn bộ dữ liệu?")) {
+          return;
+        }
+
+        localStorage.removeItem("memoryGrid");
+
+        document.getElementById("rows").value = 5;
+        document.getElementById("cols").value = 5;
+
+        createGrid();
+      }
+
+      window.onload = () => {
+        loadGrid();
+      };
     </script>
   </body>
 </html>
